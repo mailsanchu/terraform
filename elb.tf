@@ -1,8 +1,8 @@
 # The provider here is aws but it can be other provider
 provider "aws" {
   region = "${var.aws_region}"
-  access_key = "${var.access_key}"
-  secret_key = "${var.secret_key}"
+  shared_credentials_file = "/home/svarkey/.aws/credentials"
+  profile = "default"
 }
 
 # Create a VPC to launch our instances into

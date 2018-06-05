@@ -30,3 +30,6 @@ target/
 # Packages
 *.zip
 /bin/
+
+terraform.tfstate
+terraform.tfstate.backup
