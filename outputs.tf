@@ -1,5 +1,5 @@
 output "address" {
-  value = "${aws_elb.web.dns_name}"
+  value = "http://${aws_elb.web.dns_name}"
 }
 output "id" {
   description = "List of IDs of instances"
@@ -11,7 +11,9 @@ output "public_ip" {
   value = [
     "${aws_instance.SanchuTest.*.public_ip}"]
 }
-
+output "command" {
+  value = "bash /tmp/wait_for_elb.sh"
+}
 
 /*
 output "id" {

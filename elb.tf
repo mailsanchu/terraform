@@ -148,6 +148,18 @@ resource "aws_elb" "web" {
   connection_draining_timeout = 400
   depends_on = [
     "aws_instance.SanchuTest"]
+  provisioner "local-exec" {
+    command = "cp -f /home/svarkey/dev/code/demo/terraform/wait_for_elb.sh /tmp/wait_for_elb.sh"
+    on_failure = "continue"
+  }
+  provisioner "local-exec" {
+    command = "sed -Ei 's/LOAD_BAL_DNS/${aws_elb.web.dns_name}/g' /tmp/wait_for_elb.sh"
+    on_failure = "continue"
+  }
+  provisioner "local-exec" {
+    command = "chmod a+x /tmp/wait_for_elb.sh"
+    on_failure = "continue"
+  }
 }
 
 resource "null_resource" "cluster" {
@@ -178,6 +190,11 @@ resource "null_resource" "cluster" {
       timeout = "5m"
       agent = false
     }
+  }
+  provisioner "local-exec" {
+    command = "/tmp/wait_for_elb.sh"
+    interpreter = "/bin/bash"
+    on_failure = "continue"
   }
 }
 
