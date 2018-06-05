@@ -1,6 +1,5 @@
 # The provider here is aws but it can be other provider
 provider "aws" {
-  region = "${var.aws_region}"
   shared_credentials_file = "/home/svarkey/.aws/credentials"
   profile = "default"
 }

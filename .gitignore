@@ -6,6 +6,7 @@
 
 # Intellij
 .idea/
+.terraform/
 *.iml
 *.iws
 *.eml
