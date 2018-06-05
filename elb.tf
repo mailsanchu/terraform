@@ -193,7 +193,9 @@ resource "null_resource" "cluster" {
   }
   provisioner "local-exec" {
     command = "/tmp/wait_for_elb.sh"
-    interpreter = "/bin/bash"
+    interpreter = [
+      "/bin/bash",
+      "-c"]
     on_failure = "continue"
   }
 }
