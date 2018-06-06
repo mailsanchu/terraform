@@ -2,10 +2,12 @@
 echo "Waiting for LOAD_BAL_DNS ... "
 while true;
 do
-	HTTP_STATUS=`wget --no-check-certificate --spider -S "http://LOAD_BAL_DNS" | grep "HTTP/" | awk '{print $2}'`
-	if [[ $HTTP_STATUS = "200" ]]; then
+	wget --no-check-certificate --spider -S "http://LOAD_BAL_DNS";
+	if [ $? -eq 0 ]; then
 		echo Status is 200 OK, Application is Up!;
 		break;
+	else
+		echo "------------------------------------------- $?"
 	fi
-	sleep 0.1;
+	sleep 5;
 done
