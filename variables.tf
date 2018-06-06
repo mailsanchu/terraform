@@ -1,5 +1,5 @@
 variable "num_of_instances" {
-  default = 1
+  default = 2
 }
 
 

@@ -4,12 +4,12 @@ output "address" {
 output "id" {
   description = "List of IDs of instances"
   value = [
-    "${aws_instance.SanchuTest.*.id}"]
+    "${aws_instance.TerraformDemo.*.id}"]
 }
 output "public_ip" {
   description = "List of public_ip's of instances"
   value = [
-    "${aws_instance.SanchuTest.*.public_ip}"]
+    "${aws_instance.TerraformDemo.*.public_ip}"]
 }
 output "command" {
   value = "bash /tmp/wait_for_elb.sh"

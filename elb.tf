@@ -5,27 +5,27 @@ provider "aws" {
 }
 
 # Create a VPC to launch our instances into
-resource "aws_vpc" "vpc_tuto" {
+resource "aws_vpc" "terraform_vpc" {
   cidr_block = "172.31.0.0/16"
   enable_dns_support = true
   enable_dns_hostnames = true
   tags = {
-    Name = "SanchuTest"
+    Name = "Terraform_Vpc"
   }
 }
 
 
 # Create a way out to the internet
 resource "aws_internet_gateway" "gw" {
-  vpc_id = "${aws_vpc.vpc_tuto.id}"
+  vpc_id = "${aws_vpc.terraform_vpc.id}"
   tags {
-    Name = "InternetGateway"
+    Name = "Terraform_Internet_Gateway"
   }
 }
 
 # Public route as way out to the internet
 resource "aws_route" "internet_access" {
-  route_table_id = "${aws_vpc.vpc_tuto.main_route_table_id}"
+  route_table_id = "${aws_vpc.terraform_vpc.main_route_table_id}"
   destination_cidr_block = "0.0.0.0/0"
   gateway_id = "${aws_internet_gateway.gw.id}"
 }
@@ -33,13 +33,13 @@ resource "aws_route" "internet_access" {
 
 # Create a subnet in the AZ eu-east-1
 resource "aws_subnet" "subnet_us_east_1a" {
-  vpc_id = "${aws_vpc.vpc_tuto.id}"
+  vpc_id = "${aws_vpc.terraform_vpc.id}"
   cidr_block = "172.31.1.0/24"
   map_public_ip_on_launch = true
   availability_zone = "us-east-1a"
   //  default_for_az = true
   tags = {
-    Name = "Sanchu_Subnet"
+    Name = "Terraform_Subnet"
   }
 }
 
@@ -47,11 +47,11 @@ resource "aws_subnet" "subnet_us_east_1a" {
 # Associate subnet subnet_eu_west_1a to public route table
 resource "aws_route_table_association" "subnet_eu_west_1a_association" {
   subnet_id = "${aws_subnet.subnet_us_east_1a.id}"
-  route_table_id = "${aws_vpc.vpc_tuto.main_route_table_id}"
+  route_table_id = "${aws_vpc.terraform_vpc.main_route_table_id}"
 }
 
 resource "aws_default_network_acl" "default" {
-  default_network_acl_id = "${aws_vpc.vpc_tuto.default_network_acl_id}"
+  default_network_acl_id = "${aws_vpc.terraform_vpc.default_network_acl_id}"
 
   ingress {
     protocol = -1
@@ -73,7 +73,7 @@ resource "aws_default_network_acl" "default" {
 }
 
 resource "aws_default_security_group" "default" {
-  vpc_id = "${aws_vpc.vpc_tuto.id}"
+  vpc_id = "${aws_vpc.terraform_vpc.id}"
 
   ingress {
     protocol = -1
@@ -96,13 +96,11 @@ resource "aws_default_security_group" "default" {
 }
 
 
-resource "aws_instance" "SanchuTest" {
+resource "aws_instance" "TerraformDemo" {
   ami = "ami-14c5486b"
   instance_type = "t2.micro"
   key_name = "svarkey_private"
-  tags {
-    Name = "SanchuTest"
-  }
+
   subnet_id = "${aws_subnet.subnet_us_east_1a.id}"
   count = "${var.num_of_instances}"
   # Creating three EC2 instances
@@ -116,11 +114,14 @@ resource "aws_instance" "SanchuTest" {
       "private_ip",
       "root_block_device"]
   }
+  tags {
+    Name = "TerraformDemo_Instance_${count.index}"
+  }
 
 }
 
 resource "aws_elb" "web" {
-  name = "sanchu"
+  name = "terraform-demo"
   # The same availability zone as our instance
   subnets = [
     "${aws_subnet.subnet_us_east_1a.id}"]
@@ -141,13 +142,13 @@ resource "aws_elb" "web" {
   }
   # The instance is registered automatically
   instances = [
-    "${aws_instance.SanchuTest.*.id}"]
+    "${aws_instance.TerraformDemo.*.id}"]
   cross_zone_load_balancing = true
   idle_timeout = 400
   connection_draining = true
   connection_draining_timeout = 400
   depends_on = [
-    "aws_instance.SanchuTest"]
+    "aws_instance.TerraformDemo"]
   provisioner "local-exec" {
     command = "cp -f /home/svarkey/dev/code/demo/terraform/wait_for_elb.sh /tmp/wait_for_elb.sh"
     on_failure = "continue"
@@ -162,18 +163,18 @@ resource "aws_elb" "web" {
   }
 }
 
-resource "null_resource" "cluster" {
+resource "null_resource" "nginx_install" {
   depends_on = [
-    "aws_instance.SanchuTest"]
+    "aws_instance.TerraformDemo"]
   # Bootstrap script can run on any instance of the cluster
   # So we just choose the first in this case
   count = "${var.num_of_instances}"
   triggers {
-    current_ec2_instance_id = "${element(aws_instance.SanchuTest.*.id, count.index)}"
+    current_ec2_instance_id = "${element(aws_instance.TerraformDemo.*.id, count.index)}"
     instance_number = "${count.index + 1}"
   }
   connection {
-    host = "${element(aws_instance.SanchuTest.*.public_ip, count.index)}"
+    host = "${element(aws_instance.TerraformDemo.*.public_ip, count.index)}"
   }
 
   provisioner "remote-exec" {
@@ -181,7 +182,7 @@ resource "null_resource" "cluster" {
       "sudo yum -y update",
       "sudo yum -y install nginx",
       "sudo service nginx start",
-      "sudo sed -Ei 's/Amazon Linux AMI/Amazon Linux AMI-${element(aws_instance.SanchuTest.*.public_ip, count.index)}/g' /usr/share/nginx/html/index.html",
+      "sudo sed -Ei 's/Amazon Linux AMI/Amazon Linux AMI-${element(aws_instance.TerraformDemo.*.public_ip, count.index)}/g' /usr/share/nginx/html/index.html",
     ]
     connection {
       user = "ec2-user"
